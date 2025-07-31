@@ -1,2 +1,3 @@
 # idmefv2-glpi-addon
-A IDMEFv2 enrichment addon using GLPI to provide location and inventory information
+
+This repository provides a IDMEFv2 enrichment addon using GLPI to add location and inventory information to a IDMEFv2 message.

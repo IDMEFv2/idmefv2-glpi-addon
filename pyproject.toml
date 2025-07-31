@@ -1,0 +1,35 @@
+[project]
+name = "idmefv2-glpi-addon"
+dynamic = ["version"]
+dependencies = [
+    'Flask',
+]
+requires-python = ">=3.10"
+authors = [
+  {name = "François Déchelle"},
+]
+description = "A IDMEFv2 enrichment addon using GLPI to provide location and inventory information"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["IDMEFv2"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Security"
+]
+
+[project.urls]
+Homepage = "https://www.idmefv2.org"
+Repository = "https://github.com/IDMEFv2/idmefv2-glpi-addon"
+"Bug Tracker" = "https://github.com/IDMEFv2/idmefv2-glpi-addon/issues"
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]

@@ -1,5 +1,4 @@
-from flask import Flask
+#pylint: disable=wrong-import-position
+#import idmefv2.addon.glpi.routes
 
-app = Flask(__name__)
-
-import idmefv2.addon.glpi.routes
+from .process import NullProcessor, DNSProcessor

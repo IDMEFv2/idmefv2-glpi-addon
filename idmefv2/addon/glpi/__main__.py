@@ -6,16 +6,22 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
+PROCESSORS = []
+
 @app.route('/ping', methods=['GET'])
-def ping():
-    '''
-    Implements the /ping GET request
-    Response is PONG + 'name' parameter of request
-    '''
+def _ping():
     name = request.args.get('name')
     pong = 'PONG ' + name if name is not None else 'PONG'
     data = {'answer': pong}
     return jsonify(data)
+
+@app.route('/dns', methods=['POST'])
+def _dns():
+    message = request.get_json(force = True)
+    logging.debug('processing %s with %s', str(message), str(PROCESSORS))
+    for p in PROCESSORS:
+        message = p.process(message)
+    return jsonify(message)
 
 def _parse_options():
     parser = argparse.ArgumentParser(description="Launch the IDMEFv2 GLPI addon")
@@ -43,8 +49,9 @@ def _main():
 
     glpi = _open_glpi(config)
 
-    processors = _create_processors(config, glpi)
-    print(processors)
+    #pylint: disable=global-statement
+    global PROCESSORS
+    PROCESSORS = _create_processors(config, glpi)
 
     app.run()
 

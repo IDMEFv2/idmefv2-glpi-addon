@@ -67,7 +67,7 @@ class ReverseDNSProcessor(JSONPathProcessor):
             addr = dns.reversename.from_address(ip)
             ptr = dns.resolver.resolve(addr,'PTR')
             if ptr:
-                source['Hostname'] = ptr[0]
+                source['Hostname'] = str(ptr[0])
         return message
 
 class DNSProcessor:

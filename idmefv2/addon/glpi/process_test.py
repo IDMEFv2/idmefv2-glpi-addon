@@ -40,3 +40,4 @@ def test_reverse_dns():
     rp = ReverseDNSProcessor(None)
     o = rp.process(IDMEFV2_1)
     assert 'Hostname' in o.get('Source')[0]
+    assert isinstance(o.get('Source')[0]['Hostname'], str)

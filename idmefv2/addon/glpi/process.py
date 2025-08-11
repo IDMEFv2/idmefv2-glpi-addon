@@ -2,6 +2,8 @@
 IDMEFv2 message processors
 '''
 import abc
+import dns.resolver
+import dns.reversename
 from typing import Any
 import jsonpath_ng as jsonpath
 
@@ -53,10 +55,20 @@ class JSONPathProcessor(Processor):
     def transform(self, message: dict) -> dict:
         raise NotImplementedError()
 
-class DNSProcessor(JSONPathProcessor):
+class ReverseDNSProcessor(JSONPathProcessor):
     def __init__(self, context: Any):
         super().__init__(context, '$.Source[*].IP')
 
     def transform(self, message: dict) -> dict:
-        message['foobar'] = 123
+        for source in message['Source']:
+            if 'Hostname' in source:
+                continue
+            ip = source['IP']
+            addr = dns.reversename.from_address(ip)
+            ptr = dns.resolver.resolve(addr,'PTR')
+            if ptr:
+                source['Hostname'] = ptr[0]
         return message
+
+class DNSProcessor:
+    pass

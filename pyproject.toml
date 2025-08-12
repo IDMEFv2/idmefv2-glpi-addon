@@ -3,7 +3,6 @@ name = "idmefv2-glpi-addon"
 dynamic = ["version"]
 dependencies = [
     'Flask',
-    "jsonpath_ng",
     'dnspython',
 ]
 requires-python = ">=3.10"

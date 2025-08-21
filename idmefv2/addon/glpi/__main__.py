@@ -3,6 +3,7 @@ from configparser import ConfigParser
 import importlib
 import logging
 from flask import Flask, jsonify, request
+import glpi_api
 
 app = Flask(__name__)
 
@@ -29,7 +30,10 @@ def _parse_options():
     return parser.parse_args()
 
 def _open_glpi(config: ConfigParser):
-    return ('foo', 'bar')
+    url = config.get('glpi', 'url')
+    apptoken = config.get('glpi', 'apptoken')
+    auth = config.get('glpi', 'auth')
+    return glpi_api.GLPI(url=url, apptoken=apptoken, auth=auth)
 
 def _create_processors(config: ConfigParser, glpi):
     pn = list(map(lambda n : n.strip(), config.get('idmefv2', 'processors').split(',')))
@@ -48,6 +52,7 @@ def _main():
     logging.basicConfig(level=config.get('logging', 'level', fallback='INFO'))
 
     glpi = _open_glpi(config)
+    logging.debug('connected to GLPI (%s)', str(glpi))
 
     #pylint: disable=global-statement
     global PROCESSORS

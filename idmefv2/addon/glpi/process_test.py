@@ -4,12 +4,12 @@ from .process import NullProcessor, ReverseDNSProcessor, DNSProcessor
 def test_null():
     message = {"foo": 1, "bar": 2}
     p = NullProcessor(None)
-    assert p.process(message) is message
+    assert p.transform(message) is message
 
 
 def test_reverse_dns_1():
     rp = ReverseDNSProcessor(None)
-    o = rp.process(IDMEFV2_1)
+    o = rp.transform(IDMEFV2_1)
     assert "Hostname" in o.get("Source")[0]
     assert isinstance(o.get("Source")[0]["Hostname"], str)
     assert "google" in o.get("Source")[0]["Hostname"]
@@ -20,7 +20,7 @@ def test_reverse_dns_1():
 
 def test_dns_1():
     p = DNSProcessor(None)
-    o = p.process(IDMEFV2_2)
+    o = p.transform(IDMEFV2_2)
     assert "IP" in o.get("Source")[0]
     assert isinstance(o.get("Source")[0]["IP"], str)
     assert "8.8." in o.get("Source")[0]["IP"]

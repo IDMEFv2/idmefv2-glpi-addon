@@ -7,6 +7,7 @@ from typing import Any
 import urllib.parse
 import dns.resolver
 import dns.reversename
+import dns.exception
 
 
 class Processor(abc.ABC):
@@ -14,55 +15,61 @@ class Processor(abc.ABC):
         self._context = context
 
     @abc.abstractmethod
-    def transform(self, message: dict) -> dict:
+    def process(self, message: dict) -> dict:
         """
-        Message modification method, implemented in sub-classes
+        Message processing method, implemented in sub-classes
 
         Args:
             message (dict): the input IDMEFv2 message
 
         Returns:
-            dict: the transformed message
+            dict: the processed message
         """
         raise NotImplementedError()
 
 
 class NullProcessor(Processor):
-    def transform(self, message: dict) -> dict:
+    def process(self, message: dict) -> dict:
         return message
 
 
 class IPProcessor(Processor):
-    def transform(self, message: dict) -> dict:
+    def process(self, message: dict) -> dict:
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
-                self.transform_host(message, host)
+                self.process_host(message, host)
         return message
 
     @abc.abstractmethod
-    def transform_host(self, message: dict, host: dict):
+    def process_host(self, message: dict, host: dict):
         raise NotImplementedError()
 
 
 class ReverseDNSProcessor(IPProcessor):
 
-    def transform_host(self, message: dict, host: dict):
+    def process_host(self, message: dict, host: dict):
         if "Hostname" in host or "IP" not in host:
             return
         addr = dns.reversename.from_address(host["IP"])
-        ptr = dns.resolver.resolve(addr, "PTR")
+        try:
+            ptr = dns.resolver.resolve(addr, "PTR")
+        except dns.exception.DNSException:
+            return
         if ptr:
             host["Hostname"] = str(ptr[0])
 
 
 class DNSProcessor(IPProcessor):
 
-    def transform_host(self, message: dict, host: dict):
+    def process_host(self, message: dict, host: dict):
         if "IP" in host or "Hostname" not in host:
             return
-        ip = dns.resolver.resolve(host["Hostname"])
-        if ip:
-            host["IP"] = str(ip[0])
+        try:
+            answer = dns.resolver.resolve(host["Hostname"])
+        except dns.exception.DNSException:
+            return
+        if answer:
+            host["IP"] = str(answer[0])
 
 
 class GLPIProcessor(IPProcessor):
@@ -91,7 +98,7 @@ class GLPIProcessor(IPProcessor):
         message["Attachment"].append(a)
         return name
 
-    def transform_host(self, message: dict, host: dict):
+    def process_host(self, message: dict, host: dict):
         if "IP" not in host:
             return
         criteria = [

@@ -1,2 +1,2 @@
 
-from .process import NullProcessor, ReverseDNSProcessor
+from .process import NullProcessor, DNSProcessor, ReverseDNSProcessor, GLPIProcessor

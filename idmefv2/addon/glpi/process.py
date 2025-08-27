@@ -6,6 +6,7 @@ import abc
 from typing import Any
 import dns.resolver
 import dns.reversename
+import urllib.parse
 
 
 class Processor(abc.ABC):
@@ -66,12 +67,25 @@ class DNSProcessor(IPProcessor):
 
 class GLPIProcessor(IPProcessor):
 
+    ID_ID = "2"
     ADDRESS_ID = "101"
     LATITUDE_ID = "998"
     LONGITUDE_ID = "999"
 
+    def addGLPIAttachment(self, message: dict, computer_id: int) -> str:
+        if "Attachment" not in message:
+            message["Attachment"] = []
+        name = "glpi_computer_link_" + str(computer_id)
+        r = urllib.parse.urlparse(self._context.url)
+        url = r.scheme + "://" + r.netloc + "/front/computer.form.php?id=" + str(computer_id)
+        a = {
+            "Name": name,
+            "ExternalURI": url,
+        }
+        message["Attachment"].append(a)
+        return name
+
     def transformHost(self, message: dict, host: dict):
-        print(host)
         if "IP" not in host:
             return
         criteria = [
@@ -81,7 +95,7 @@ class GLPIProcessor(IPProcessor):
                 "value": "^" + host["IP"] + "$",
             }
         ]
-        forcedisplay = ["Location.address", "Location.latitude", "Location.longitude"]
+        forcedisplay = ["id", "Location.address", "Location.latitude", "Location.longitude"]
         r = self._context.search(
             "Computer", criteria=criteria, forcedisplay=forcedisplay
         )
@@ -93,3 +107,7 @@ class GLPIProcessor(IPProcessor):
         if GLPIProcessor.LATITUDE_ID in computer and GLPIProcessor.LONGITUDE_ID in computer:
             geoloc = computer[GLPIProcessor.LATITUDE_ID] + "," + computer[GLPIProcessor.LONGITUDE_ID]
             host["GeoLocation"] = geoloc
+        if "Attachment" not in host:
+            host["Attachment"] = []
+        attachment_name = self.addGLPIAttachment(message, computer[GLPIProcessor.ID_ID])
+        host["Attachment"].append(attachment_name)

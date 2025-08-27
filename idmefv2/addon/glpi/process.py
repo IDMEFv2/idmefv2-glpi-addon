@@ -4,9 +4,9 @@ IDMEFv2 message processors
 
 import abc
 from typing import Any
+import urllib.parse
 import dns.resolver
 import dns.reversename
-import urllib.parse
 
 
 class Processor(abc.ABC):
@@ -36,17 +36,17 @@ class IPProcessor(Processor):
     def transform(self, message: dict) -> dict:
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
-                self.transformHost(message, host)
+                self.transform_host(message, host)
         return message
 
     @abc.abstractmethod
-    def transformHost(self, message: dict, host: dict):
+    def transform_host(self, message: dict, host: dict):
         raise NotImplementedError()
 
 
 class ReverseDNSProcessor(IPProcessor):
 
-    def transformHost(self, message: dict, host: dict):
+    def transform_host(self, message: dict, host: dict):
         if "Hostname" in host or "IP" not in host:
             return
         addr = dns.reversename.from_address(host["IP"])
@@ -57,7 +57,7 @@ class ReverseDNSProcessor(IPProcessor):
 
 class DNSProcessor(IPProcessor):
 
-    def transformHost(self, message: dict, host: dict):
+    def transform_host(self, message: dict, host: dict):
         if "IP" in host or "Hostname" not in host:
             return
         ip = dns.resolver.resolve(host["Hostname"])
@@ -72,12 +72,18 @@ class GLPIProcessor(IPProcessor):
     LATITUDE_ID = "998"
     LONGITUDE_ID = "999"
 
-    def addGLPIAttachment(self, message: dict, computer_id: int) -> str:
+    def add_glpi_attachment(self, message: dict, computer_id: int) -> str:
         if "Attachment" not in message:
             message["Attachment"] = []
         name = "glpi_computer_link_" + str(computer_id)
         r = urllib.parse.urlparse(self._context.url)
-        url = r.scheme + "://" + r.netloc + "/front/computer.form.php?id=" + str(computer_id)
+        url = (
+            r.scheme
+            + "://"
+            + r.netloc
+            + "/front/computer.form.php?id="
+            + str(computer_id)
+        )
         a = {
             "Name": name,
             "ExternalURI": url,
@@ -85,7 +91,7 @@ class GLPIProcessor(IPProcessor):
         message["Attachment"].append(a)
         return name
 
-    def transformHost(self, message: dict, host: dict):
+    def transform_host(self, message: dict, host: dict):
         if "IP" not in host:
             return
         criteria = [
@@ -95,7 +101,12 @@ class GLPIProcessor(IPProcessor):
                 "value": "^" + host["IP"] + "$",
             }
         ]
-        forcedisplay = ["id", "Location.address", "Location.latitude", "Location.longitude"]
+        forcedisplay = [
+            "id",
+            "Location.address",
+            "Location.latitude",
+            "Location.longitude",
+        ]
         r = self._context.search(
             "Computer", criteria=criteria, forcedisplay=forcedisplay
         )
@@ -104,10 +115,19 @@ class GLPIProcessor(IPProcessor):
         computer = r[0]
         if GLPIProcessor.ADDRESS_ID in computer:
             host["Location"] = computer[GLPIProcessor.ADDRESS_ID]
-        if GLPIProcessor.LATITUDE_ID in computer and GLPIProcessor.LONGITUDE_ID in computer:
-            geoloc = computer[GLPIProcessor.LATITUDE_ID] + "," + computer[GLPIProcessor.LONGITUDE_ID]
+        if (
+            GLPIProcessor.LATITUDE_ID in computer
+            and GLPIProcessor.LONGITUDE_ID in computer
+        ):
+            geoloc = (
+                computer[GLPIProcessor.LATITUDE_ID]
+                + ","
+                + computer[GLPIProcessor.LONGITUDE_ID]
+            )
             host["GeoLocation"] = geoloc
         if "Attachment" not in host:
             host["Attachment"] = []
-        attachment_name = self.addGLPIAttachment(message, computer[GLPIProcessor.ID_ID])
+        attachment_name = self.add_glpi_attachment(
+            message, computer[GLPIProcessor.ID_ID]
+        )
         host["Attachment"].append(attachment_name)

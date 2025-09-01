@@ -1,32 +1,37 @@
+import copy
 from .process import NullProcessor, DNSProcessor
 
 
 def test_null():
     message = {"foo": 1, "bar": 2}
-    p = NullProcessor(None)
-    assert p.process(message) is message
+    p = NullProcessor()
+    before = copy.deepcopy(message)
+    p.process(message)
+    assert message == before
 
 
 def test_reverse_dns_1():
-    rp = DNSProcessor(None)
-    o = rp.process(IDMEFV2_1)
-    assert "Hostname" in o.get("Source")[0]
-    assert isinstance(o.get("Source")[0]["Hostname"], str)
-    assert "google" in o.get("Source")[0]["Hostname"]
-    assert "Hostname" in o.get("Target")[0]
-    assert isinstance(o.get("Target")[0]["Hostname"], str)
-    assert "gandi" in o.get("Target")[0]["Hostname"]
+    p = DNSProcessor()
+    m = IDMEFV2_1
+    p.process(m)
+    assert "Hostname" in m.get("Source")[0]
+    assert isinstance(m.get("Source")[0]["Hostname"], str)
+    assert "google" in m.get("Source")[0]["Hostname"]
+    assert "Hostname" in m.get("Target")[0]
+    assert isinstance(m.get("Target")[0]["Hostname"], str)
+    assert "gandi" in m.get("Target")[0]["Hostname"]
 
 
 def test_dns_1():
-    p = DNSProcessor(None)
-    o = p.process(IDMEFV2_2)
-    assert "IP" in o.get("Source")[0]
-    assert isinstance(o.get("Source")[0]["IP"], str)
-    assert "8.8." in o.get("Source")[0]["IP"]
-    assert "IP" in o.get("Target")[0]
-    assert isinstance(o.get("Target")[0]["IP"], str)
-    assert "217.70.184.56" in o.get("Target")[0]["IP"]
+    p = DNSProcessor()
+    m = IDMEFV2_2
+    p.process(m)
+    assert "IP" in m.get("Source")[0]
+    assert isinstance(m.get("Source")[0]["IP"], str)
+    assert "8.8." in m.get("Source")[0]["IP"]
+    assert "IP" in m.get("Target")[0]
+    assert isinstance(m.get("Target")[0]["IP"], str)
+    assert "217.70.184.56" in m.get("Target")[0]["IP"]
 
 
 IDMEFV2_1 = {

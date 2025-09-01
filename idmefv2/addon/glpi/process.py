@@ -11,27 +11,24 @@ import dns.exception
 
 class Processor(abc.ABC):
     @abc.abstractmethod
-    def process(self, message: dict) -> dict:
+    def process(self, message: dict):
         """
         Message processing method, implemented in sub-classes
 
         Args:
             message (dict): the input IDMEFv2 message
-
-        Returns:
-            dict: the processed message
         """
         raise NotImplementedError()
 
 
 class NullProcessor(Processor):
-    def process(self, message: dict) -> dict:
-        return message
+    def process(self, message: dict):
+        pass
 
 
 class DNSProcessor(Processor):
 
-    def process(self, message: dict) -> dict:
+    def process(self, message: dict):
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
                 try:
@@ -46,7 +43,6 @@ class DNSProcessor(Processor):
                             host["Hostname"] = str(ptr[0])
                 except dns.exception.DNSException:
                     continue
-        return message
 
 
 class GLPIProcessor(Processor):
@@ -110,9 +106,8 @@ class GLPIProcessor(Processor):
         attachment_name = self._add_glpi_attachment(message, computer[GLPIProcessor.ID])
         host["Attachment"].append(attachment_name)
 
-    def process(self, message: dict) -> dict:
+    def process(self, message: dict):
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
                 if "IP" in host:
                     self._process_host(message, host)
-        return message

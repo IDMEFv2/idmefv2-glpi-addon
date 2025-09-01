@@ -34,7 +34,8 @@ class ProcessorView(View):
         logging.debug("received request %s [%s]", str(request), str(request.get_data()))
         message = request.get_json(force=True)
         logging.debug("processing %s with %s", str(message), str(self._processor))
-        return jsonify(self._processor.process(message))
+        self._processor.process(message)
+        return jsonify(message)
 
 
 def _main():

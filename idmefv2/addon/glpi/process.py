@@ -3,7 +3,6 @@ IDMEFv2 message processors
 """
 
 import abc
-from typing import Any
 import urllib.parse
 import dns.resolver
 import dns.reversename
@@ -11,9 +10,6 @@ import dns.exception
 
 
 class Processor(abc.ABC):
-    def __init__(self, context: Any):
-        self._context = context
-
     @abc.abstractmethod
     def process(self, message: dict) -> dict:
         """
@@ -33,57 +29,41 @@ class NullProcessor(Processor):
         return message
 
 
-class IPProcessor(Processor):
+class DNSProcessor(Processor):
+
     def process(self, message: dict) -> dict:
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
-                self.process_host(message, host)
+                try:
+                    if "Hostname" in host and "IP" not in host:
+                        answer = dns.resolver.resolve(host["Hostname"])
+                        if answer:
+                            host["IP"] = str(answer[0])
+                    if "IP" in host and "Hostname" not in host:
+                        addr = dns.reversename.from_address(host["IP"])
+                        ptr = dns.resolver.resolve(addr, "PTR")
+                        if ptr:
+                            host["Hostname"] = str(ptr[0])
+                except dns.exception.DNSException:
+                    continue
         return message
 
-    @abc.abstractmethod
-    def process_host(self, message: dict, host: dict):
-        raise NotImplementedError()
 
+class GLPIProcessor(Processor):
 
-class ReverseDNSProcessor(IPProcessor):
+    ID = "2"
+    ADDRESS = "101"
+    LATITUDE = "998"
+    LONGITUDE = "999"
 
-    def process_host(self, message: dict, host: dict):
-        if "Hostname" in host or "IP" not in host:
-            return
-        addr = dns.reversename.from_address(host["IP"])
-        try:
-            ptr = dns.resolver.resolve(addr, "PTR")
-        except dns.exception.DNSException:
-            return
-        if ptr:
-            host["Hostname"] = str(ptr[0])
+    def __init__(self, glpi):
+        self._glpi = glpi
 
-
-class DNSProcessor(IPProcessor):
-
-    def process_host(self, message: dict, host: dict):
-        if "IP" in host or "Hostname" not in host:
-            return
-        try:
-            answer = dns.resolver.resolve(host["Hostname"])
-        except dns.exception.DNSException:
-            return
-        if answer:
-            host["IP"] = str(answer[0])
-
-
-class GLPIProcessor(IPProcessor):
-
-    ID_ID = "2"
-    ADDRESS_ID = "101"
-    LATITUDE_ID = "998"
-    LONGITUDE_ID = "999"
-
-    def add_glpi_attachment(self, message: dict, computer_id: int) -> str:
+    def _add_glpi_attachment(self, message: dict, computer_id: int) -> str:
         if "Attachment" not in message:
             message["Attachment"] = []
         name = "glpi_computer_link_" + str(computer_id)
-        r = urllib.parse.urlparse(self._context.url)
+        r = urllib.parse.urlparse(self._glpi.url)
         url = (
             r.scheme
             + "://"
@@ -98,9 +78,7 @@ class GLPIProcessor(IPProcessor):
         message["Attachment"].append(a)
         return name
 
-    def process_host(self, message: dict, host: dict):
-        if "IP" not in host:
-            return
+    def _process_host(self, message: dict, host: dict):
         criteria = [
             {
                 "field": "IPAddress.name",
@@ -114,27 +92,27 @@ class GLPIProcessor(IPProcessor):
             "Location.latitude",
             "Location.longitude",
         ]
-        r = self._context.search(
-            "Computer", criteria=criteria, forcedisplay=forcedisplay
-        )
+        r = self._glpi.search("Computer", criteria=criteria, forcedisplay=forcedisplay)
         if len(r) < 1:
             return
         computer = r[0]
-        if GLPIProcessor.ADDRESS_ID in computer:
-            host["Location"] = computer[GLPIProcessor.ADDRESS_ID]
-        if (
-            GLPIProcessor.LATITUDE_ID in computer
-            and GLPIProcessor.LONGITUDE_ID in computer
-        ):
+        if GLPIProcessor.ADDRESS in computer:
+            host["Location"] = computer[GLPIProcessor.ADDRESS]
+        if GLPIProcessor.LATITUDE in computer and GLPIProcessor.LONGITUDE in computer:
             geoloc = (
-                computer[GLPIProcessor.LATITUDE_ID]
+                computer[GLPIProcessor.LATITUDE]
                 + ","
-                + computer[GLPIProcessor.LONGITUDE_ID]
+                + computer[GLPIProcessor.LONGITUDE]
             )
             host["GeoLocation"] = geoloc
         if "Attachment" not in host:
             host["Attachment"] = []
-        attachment_name = self.add_glpi_attachment(
-            message, computer[GLPIProcessor.ID_ID]
-        )
+        attachment_name = self._add_glpi_attachment(message, computer[GLPIProcessor.ID])
         host["Attachment"].append(attachment_name)
+
+    def process(self, message: dict) -> dict:
+        for k in ["Source", "Target"]:
+            for host in message.get(k, []):
+                if "IP" in host:
+                    self._process_host(message, host)
+        return message

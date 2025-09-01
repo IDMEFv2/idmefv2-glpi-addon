@@ -1,4 +1,4 @@
-from .process import NullProcessor, ReverseDNSProcessor, DNSProcessor
+from .process import NullProcessor, DNSProcessor
 
 
 def test_null():
@@ -8,7 +8,7 @@ def test_null():
 
 
 def test_reverse_dns_1():
-    rp = ReverseDNSProcessor(None)
+    rp = DNSProcessor(None)
     o = rp.process(IDMEFV2_1)
     assert "Hostname" in o.get("Source")[0]
     assert isinstance(o.get("Source")[0]["Hostname"], str)

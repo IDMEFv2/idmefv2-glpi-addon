@@ -11,7 +11,7 @@ from .process import NullProcessor, DNSProcessor, GLPIProcessor
 
 
 def _parse_options():
-    parser = argparse.ArgumentParser(description="Launch the IDMEFv2 GLPI addon")
+    parser = argparse.ArgumentParser(description="Launch the IDMEFv2 GLPI addon", prog="glpi-addon")
     parser.add_argument(
         "-c", "--conf", help="give configuration file", dest="conf_file", required=True
     )

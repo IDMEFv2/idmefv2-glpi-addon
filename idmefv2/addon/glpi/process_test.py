@@ -1,3 +1,7 @@
+# pylint: disable=missing-function-docstring
+"""
+Tests for the IDMEFv2 GLPI add-on
+"""
 import copy
 from .process import NullProcessor, DNSProcessor
 

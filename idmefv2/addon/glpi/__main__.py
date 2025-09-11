@@ -1,3 +1,6 @@
+"""
+Main for IDMEFv2 GLPI add-on
+"""
 import argparse
 from configparser import ConfigParser
 import logging
@@ -9,7 +12,9 @@ from .process import NullProcessor, DNSProcessor, GLPIProcessor
 
 def _parse_options():
     parser = argparse.ArgumentParser(description="Launch the IDMEFv2 GLPI addon")
-    parser.add_argument("-c", "--conf", help="give configuration file", dest="conf_file", required=True)
+    parser.add_argument(
+        "-c", "--conf", help="give configuration file", dest="conf_file", required=True
+    )
     return parser.parse_args()
 
 
@@ -25,6 +30,10 @@ def _open_glpi(config: ConfigParser):
 
 
 class ProcessorView(View):
+    """
+    A derived class from flask View, which receives a IDMEFv2 message in
+    a POST request and returns the processed message.
+    """
     methods = ["POST"]
 
     def __init__(self, processor):

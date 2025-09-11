@@ -10,10 +10,17 @@ import dns.exception
 
 
 class Processor(abc.ABC):
+    '''
+    Abstract base class for message processors.
+
+    A message processor must implement a process method which modifies
+    the message in-place.
+    '''
     @abc.abstractmethod
     def process(self, message: dict):
         """
         Message processing method, implemented in sub-classes
+        Message is modified in-place.
 
         Args:
             message (dict): the input IDMEFv2 message
@@ -22,12 +29,19 @@ class Processor(abc.ABC):
 
 
 class NullProcessor(Processor):
+    """
+    A message processor which does not modify the message.
+    """
     def process(self, message: dict):
         pass
 
 
 class DNSProcessor(Processor):
-
+    """
+    A message processor which queries:
+    - the DNS to obtain hostname if an IP is present
+    - the reverse DNS to obtain IP if a hostname is present
+    """
     def process(self, message: dict):
         for k in ["Source", "Target"]:
             for host in message.get(k, []):
@@ -46,6 +60,11 @@ class DNSProcessor(Processor):
 
 
 class GLPIProcessor(Processor):
+    """
+    A message processor which queries GLPI using GLPI REST API
+    to obtain geolocation of a computer.
+    The computer is queried using its IP.
+    """
 
     ID = "2"
     ADDRESS = "101"

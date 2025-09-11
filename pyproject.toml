@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 authors = [
   {name = "François Déchelle"},
 ]
-description = "A IDMEFv2 enrichment addon using GLPI to provide location and inventory information"
+description = "A IDMEFv2 enrichment add-on using GLPI to provide location and inventory information"
 readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["IDMEFv2"]

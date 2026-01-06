@@ -131,3 +131,68 @@ class GLPIProcessor(Processor):
             for host in message.get(k, []):
                 if "IP" in host:
                     self._process_host(message, host)
+
+class GLPITicketProcessor(Processor):
+    """
+    A message processor which creates a ticket in GLPI using its API
+    """
+
+    ID = "2"
+
+    def __init__(self, glpi):
+        self._glpi = glpi
+
+    def find_asset(self, host: dict):
+        """
+        Get an asset from GLPI matching the given IP
+
+        :param self: Description
+        :param host: Description
+        :type host: dict
+        """
+        criteria = [
+            {
+                "field": "IPAddress.name",
+                "searchtype": "contains",
+                "value": "^" + host["IP"] + "$",
+            }
+        ]
+        forcedisplay = [
+            "id",
+        ]
+        for itemtype in ['Computer', 'Printer', 'NetworkEquipment', 'Phone']:
+            r = self._glpi.search(itemtype, criteria=criteria, forcedisplay=forcedisplay)
+            if len(r) < 1:
+                continue
+            items_id = r[0][GLPITicketProcessor.ID]
+            return {
+                "itemtype": itemtype,
+                "items_id": items_id
+            }
+
+    def create_ticket(self, message: dict, associated_items: dict):
+        ticket_payload = {
+            "name": "",
+            "content": "",
+            "items_id": {}
+        }
+        for asset in associated_items["assets"]:
+            itemtype = asset["itemtype"]
+            if not itemtype in ticket_payload["items_id"]:
+                ticket_payload["items_id"].append({itemtype: [asset['items_id']]})
+            else:
+                ticket_payload["items_id"][itemtype].append(asset["items_id"])
+        self._glpi.add("Ticket", ticket_payload)
+
+
+    def process(self, message: dict):
+        associated_items = {
+            'assets': []
+        }
+        for k in ["Source", "Target"]:
+            for host in message.get(k, []):
+                if "IP" in host:
+                    inventory_item = self.find_asset(host)
+                    if isinstance(inventory_item, dict):
+                        associated_items['assets'].append(inventory_item)
+        self.create_ticket(message, associated_items)

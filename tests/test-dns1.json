@@ -1,0 +1,19 @@
+{
+  "Version" : "2.D.V05",
+  "ID" : "@@UUID@@",
+  "CreateTime" : "@@DATETIME@@",
+  "Analyzer" : {
+    "IP" : "127.0.0.1",
+    "Name" : "foobar",
+    "Model" : "generic",
+    "Category" : [ "LOG" ],
+    "Data" : [ "Log" ],
+    "Method" : [ "Monitor" ]
+  },
+  "Source" : [
+    {"IP":"8.8.8.8"}
+    ],
+  "Target":[
+    {"Hostname":"www.teclib.com"}
+  ]
+}

@@ -66,7 +66,7 @@ def _main():
     app.add_url_rule("/glpi", view_func=ProcessorView.as_view("glpi", GLPIProcessor(glpi)))
     app.add_url_rule("/ticket", view_func=ProcessorView.as_view("glpiticket", GLPITicketProcessor(glpi)))
 
-    app.run(debug=True, host="0.0.0.0", port=config.get("listen", "port"))
+    app.run(debug=True, host="0.0.0.0", port=config.get("listen", "port", fallback=5000))
 
 
 if __name__ == "__main__":

@@ -213,3 +213,4 @@ __marimo__/
 # Local
 idmefv2/addon/glpi/t.py
 search_options.pretty.json
+tests/tmp/*

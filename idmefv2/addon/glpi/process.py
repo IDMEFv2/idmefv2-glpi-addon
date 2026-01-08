@@ -170,13 +170,11 @@ class GLPITicketProcessor(Processor):
                 "items_id": items_id
             }
 
-    def create_ticket(self, message: dict, associated_items: dict):
+    def create_ticket(self, associated_items: dict):
         """
         Create a GLPI ticket based on the recived message
 
         :param self: The instance of the class
-        :param message: IDMEFv2 message
-        :type message: dict
         :param associated_items: Items to associate to the ticket
         :type associated_items: dict
         """
@@ -204,4 +202,4 @@ class GLPITicketProcessor(Processor):
                     inventory_item = self.find_asset(host)
                     if isinstance(inventory_item, dict):
                         associated_items['assets'].append(inventory_item)
-        self.create_ticket(message, associated_items)
+        self.create_ticket(associated_items)

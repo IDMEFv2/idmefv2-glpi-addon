@@ -146,8 +146,8 @@ class GLPITicketProcessor(Processor):
         """
         Get an asset from GLPI matching the given IP
 
-        :param self: Description
-        :param host: Description
+        :param self: The instance of the class
+        :param host: Host to identify
         :type host: dict
         """
         criteria = [
@@ -171,6 +171,15 @@ class GLPITicketProcessor(Processor):
             }
 
     def create_ticket(self, message: dict, associated_items: dict):
+        """
+        Create a GLPI ticket based on the recived message
+
+        :param self: The instance of the class
+        :param message: IDMEFv2 message
+        :type message: dict
+        :param associated_items: Items to associate to the ticket
+        :type associated_items: dict
+        """
         ticket_payload = {
             "name": "",
             "content": "",

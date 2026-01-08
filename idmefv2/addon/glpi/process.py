@@ -181,7 +181,7 @@ class GLPITicketProcessor(Processor):
         ticket_payload = {
             "name": "",
             "content": "",
-            "items_id": {}
+            "items_id": []
         }
         for asset in associated_items["assets"]:
             itemtype = asset["itemtype"]

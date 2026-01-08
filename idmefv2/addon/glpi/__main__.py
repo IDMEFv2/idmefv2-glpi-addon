@@ -64,7 +64,13 @@ def _main():
     app.add_url_rule("/null", view_func=ProcessorView.as_view("null", NullProcessor()))
     app.add_url_rule("/dns", view_func=ProcessorView.as_view("dns", DNSProcessor()))
     app.add_url_rule("/glpi", view_func=ProcessorView.as_view("glpi", GLPIProcessor(glpi)))
-    app.add_url_rule("/ticket", view_func=ProcessorView.as_view("glpiticket", GLPITicketProcessor(glpi)))
+    app.add_url_rule(
+        "/ticket",
+        view_func = ProcessorView.as_view(
+            "glpiticket",
+            GLPITicketProcessor(glpi),
+        ),
+    )
 
     app.run(debug=True, host="0.0.0.0", port=config.get("listen", "port", fallback=5000))
 

@@ -78,7 +78,7 @@ class GLPIProcessor(Processor):
     def _add_glpi_attachment(self, message: dict, computer_id: int) -> str:
         if "Attachment" not in message:
             message["Attachment"] = []
-        name = "glpi_computer_link_" + str(computer_id)
+        name = "glpicomputerlink" + str(computer_id)
         r = urllib.parse.urlparse(self._glpi.url)
         url = (
             r.scheme
@@ -89,7 +89,7 @@ class GLPIProcessor(Processor):
         )
         a = {
             "Name": name,
-            "ExternalURI": url,
+            "ExternalURI": [url],
         }
         message["Attachment"].append(a)
         return name

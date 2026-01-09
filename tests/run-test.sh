@@ -69,16 +69,10 @@ if [ -z "$IDMEFV2" -o -z "ADDON_URL" ] ; then usage; fi
 
 mkdir -p $TMPDIR
 PROCESSED_IDMEFV2=$(mktemp --tmpdir=$TMPDIR tmp.idmefv2.XXXXXXXXXX)
-process_file "$IDMEFV2" > "$PROCESSED_IDMEFV2"
+process_file "$IDMEFV2" | tee "$PROCESSED_IDMEFV2"
 ADDON_RESPONSE=$(mktemp --tmpdir=$TMPDIR tmp.response.XXXXXXXXXX)
-post "$ADDON_URL" "$PROCESSED_IDMEFV2" > "$ADDON_RESPONSE"
+post "$ADDON_URL" "$PROCESSED_IDMEFV2" | tee "$ADDON_RESPONSE"
 if [ ! -z "$TESTSERVER_URL" ] ; then
     post "$TESTSERVER_URL" "$ADDON_RESPONSE"
 fi
-#rm $PROCESSED_IDMEFV2 $ADDON_RESPONSE
-
-#post '{"Source":[{"IP":"192.168.1.11"}],"Target":[{"IP": "192.168.2.11"}]}' /null
-
-#post '{"Source":[{"IP":"8.8.8.8"}],"Target":[{"Hostname":"www.teclib.com"}]}' /dns
-
-#post '{"Source":[{"IP":"192.168.1.11"}],"Target":[{"IP": "192.168.2.11"}]}' /glpi
+rm $PROCESSED_IDMEFV2 $ADDON_RESPONSE

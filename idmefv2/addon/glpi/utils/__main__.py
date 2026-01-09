@@ -28,10 +28,35 @@ COMPUTER_2 = {
     "name": "computer_2",
     "IPAddress.name": "192.168.2.11"
 }
-IPADDRESS_1 = {
-    "name": "192.168.2.11"
+# see https://github.com/glpi-project/glpi/issues/15587
+NETWORKPORT_1 = {
+  "name": "management",
+  "items_id": "XXX",
+  "logical_number": 0,
+  "itemtype": "Computer",
+  "instantiation_type": "NetworkPortEthernet",
+  "NetworkName_name": "mgmt",
+  "NetworkName_fqdns_id": 0,
+  "_create_children": True,
+  "NetworkName__ipaddresses": {
+    "-1": "XXX",
+    "_xmlrpc_fckng_fix": ""
+  }
 }
-
+NETWORKPORT_TEMPLATE = {
+  "name": "eth0",
+  "items_id": -1,
+  "logical_number": 0,
+  "itemtype": "Computer",
+  "instantiation_type": "NetworkPortEthernet",
+  "NetworkName_name": "eth0",
+  "NetworkName_fqdns_id": 0,
+  "_create_children": True,
+  "NetworkName__ipaddresses": {
+    "-1": "X.X.X.X",
+    "_xmlrpc_fckng_fix": ""
+  }
+}
 class Util:
     def __init__(self, config: ConfigParser):
         url = config.get("glpi", "url")
@@ -45,21 +70,29 @@ class Util:
             sys.exit(1)
         logging.debug("connected to GLPI (%s)", str(self._glpi))
 
-    def create_item(self, item_type: str, item: dict) -> int:
-        r = self._glpi.add(item_type, item)
-        return r[0]['id']
-
-    def create_item_if_not_exist(self, item_type: str, item: dict) -> int:
+    def search_item(self, item_type: str, field: str, value: str) -> (int|None):
         criteria = [
             {
-                "field": "name",
+                "field": field,
                 "searchtype": "contains",
-                "value": "^" + item["name"] + "$",
+                "value": "^" + value + "$",
             }
         ]
         r = self._glpi.search(item_type, criteria=criteria)
+        logging.debug("search returned %s", str(r))
         if len(r) >= 1:
             return r[0]['2']
+        return None
+
+    def create_item(self, item_type: str, item: dict) -> int:
+        r = self._glpi.add(item_type, item)
+        logging.debug("add returned %s", str(r))
+        return r[0]['id']
+
+    def create_item_if_not_exist(self, item_type: str, item: dict) -> int:
+        s = self.search_item(item_type, "name", item["name"])
+        if s is not None:
+            return s
         return self.create_item(item_type, item)
 
     def update_item(self, item_type: str, item_id: int, fields: dict):
@@ -80,21 +113,17 @@ def _main():
 
     #print(glpi.list_search_options('Location'))
 
-    l1 = u.create_item_if_not_exist("Location", LOCATION_1)
-    print(f"location id {l1}")
-
     c1 = u.create_item_if_not_exist("Computer", COMPUTER_1)
-    print(f"computer id {c1}")
+
+    l1 = u.create_item_if_not_exist("Location", LOCATION_1)
 
     u.update_item("Computer", c1, {"locations_id": l1})
 
-    # link_1 = {
-    #     "itemtype": "Computer",
-    #     "items_id": 1,
-    #     "locations_id": 1
-    # }
-    # r = u.create_item("Item_Location", link_1)
-    # print(f'link id {r}')
+    r = u.search_item("Computer", "IPAddress.name", COMPUTER_1["IPAddress.name"])
+    if r is None:
+        NETWORKPORT_TEMPLATE["items_id"] = c1
+        NETWORKPORT_TEMPLATE["NetworkName__ipaddresses"]["-1"] = COMPUTER_1["IPAddress.name"]
+        u.create_item("NetworkPort", NETWORKPORT_TEMPLATE)
 
 if __name__ == "__main__":
     _main()

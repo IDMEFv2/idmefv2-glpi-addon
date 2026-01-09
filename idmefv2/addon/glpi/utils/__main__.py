@@ -8,41 +8,37 @@ import logging
 import sys
 import glpi_api
 
-LOCATION_1 = {
-    "name":"Le Gourbi",
-    "address":"Le Gourbi",
-    "latitude":"48.01918065853973",
-    "longitude":"-4.448277354240418"
-}
-LOCATION_2 = {
-    "name": "Bordel",
-    "address":"Bordel",
-    "latitude": "43.967214059230514",
-    "longitude":"5.576376914978028"
-}
-COMPUTER_1 = {
-    "name": "computer_1",
-    "IPAddress.name": "192.168.1.11"
-}
-COMPUTER_2 = {
-    "name": "computer_2",
-    "IPAddress.name": "192.168.2.11"
-}
+COMPUTERS = [
+    {
+        "computer" : {
+            "name": "computer_1",
+        },
+        "location" : {
+            "name":"Le Gourbi",
+            "address":"Le Gourbi",
+            "latitude":"48.01918065853973",
+            "longitude":"-4.448277354240418",
+        },
+        "ipaddress" : {
+            "name": "192.168.1.11",
+        },
+    },
+        {
+        "computer" : {
+            "name": "computer_2",
+        },
+        "location" : {
+            "name":"Bordel",
+            "address":"Bordel",
+            "latitude":"43.967214059230514",
+            "longitude":"5.576376914978028",
+        },
+        "ipaddress" : {
+            "name": "192.168.2.12",
+        },
+    }
+]
 # see https://github.com/glpi-project/glpi/issues/15587
-NETWORKPORT_1 = {
-  "name": "management",
-  "items_id": "XXX",
-  "logical_number": 0,
-  "itemtype": "Computer",
-  "instantiation_type": "NetworkPortEthernet",
-  "NetworkName_name": "mgmt",
-  "NetworkName_fqdns_id": 0,
-  "_create_children": True,
-  "NetworkName__ipaddresses": {
-    "-1": "XXX",
-    "_xmlrpc_fckng_fix": ""
-  }
-}
 NETWORKPORT_TEMPLATE = {
   "name": "eth0",
   "items_id": -1,
@@ -99,6 +95,16 @@ class Util:
         fields["id"] = item_id
         return self._glpi.update(item_type, fields)
 
+def do_one_computer(u: Util, computer: dict):
+    c = u.create_item_if_not_exist("Computer", computer["computer"])
+    l = u.create_item_if_not_exist("Location", computer["location"])
+    u.update_item("Computer", c, {"locations_id": l})
+    #r = u.search_item("Computer", "IPAddress.name", computer["ipaddress"]["name"])
+    if r is None:
+        NETWORKPORT_TEMPLATE["items_id"] = c
+        NETWORKPORT_TEMPLATE["NetworkName__ipaddresses"]["-1"] = computer["ipaddress"]["name"]
+        u.create_item("NetworkPort", NETWORKPORT_TEMPLATE)
+
 def _main():
     parser = argparse.ArgumentParser(description="GLPI addon utilities", prog="glpi-addon-util")
     parser.add_argument("-c", help="give configuration file", dest="conf_file", required=True)
@@ -110,20 +116,8 @@ def _main():
     logging.basicConfig(level=config.get("logging", "level", fallback="INFO"))
 
     u = Util(config)
-
-    #print(glpi.list_search_options('Location'))
-
-    c1 = u.create_item_if_not_exist("Computer", COMPUTER_1)
-
-    l1 = u.create_item_if_not_exist("Location", LOCATION_1)
-
-    u.update_item("Computer", c1, {"locations_id": l1})
-
-    r = u.search_item("Computer", "IPAddress.name", COMPUTER_1["IPAddress.name"])
-    if r is None:
-        NETWORKPORT_TEMPLATE["items_id"] = c1
-        NETWORKPORT_TEMPLATE["NetworkName__ipaddresses"]["-1"] = COMPUTER_1["IPAddress.name"]
-        u.create_item("NetworkPort", NETWORKPORT_TEMPLATE)
+    for computer in COMPUTERS:
+        do_one_computer(u, computer)
 
 if __name__ == "__main__":
     _main()

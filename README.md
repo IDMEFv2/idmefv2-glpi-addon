@@ -57,6 +57,8 @@ pip install git+https://github.com/IDMEFv2/idmefv2-glpi-addon@V0.0.2
 
 ## Testing
 
+### Unit testing
+
 Python unit tests using [`pytest`](https://docs.pytest.org/en/stable/) are provided:
 
 ``` sh
@@ -74,6 +76,27 @@ idmefv2/addon/glpi/process_test.py::test_dns_1 PASSED                           
 
 ========================================================================== 3 passed in 0.05s ===========================================================================
 ```
+
+### Functional testing
+
+A test script and IDMEFv2 test messages are provided in [./tests](./tests) sub-directory.
+
+A utility to insert test data is also provided as a runnable Python module in `idmefv2.addon.glpi.utils`.
+
+``` sh
+$ python3 -m idmefv2.addon.glpi.utils -c /etc/glpi-addon/glpi-addon.conf
+root@e8f41d0a349e:/# python3 -m idmefv2.addon.glpi.utils -c /etc/glpi-addon/glpi-addon.conf
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): glpi:80
+DEBUG:urllib3.connectionpool:http://glpi:80 "GET /apirest.php/initSession HTTP/1.1" 200 52
+DEBUG:root:connected to GLPI (<glpi_api.GLPI object at 0x7c45fae20ce0>)
+DEBUG:urllib3.connectionpool:http://glpi:80 "GET /apirest.php/listSearchOptions/Computer HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:http://glpi:80 "GET /apirest.php/search/Computer?criteria%5B0%5D%5Bfield%5D=1&criteria%5B0%5D%5Bsearchtype%5D=contains&criteria%5B0%5D%5Bvalue%5D=%5Ecomputer_1%24 HTTP/1.1" 200 149
+...
+```
+
+This script takes as command line option the configuration file (same as the addon service).
+
+Note that this script is idempotent: if test data are already present, test data will not be inserted again.
 
 ## Running
 
@@ -163,11 +186,12 @@ The add-on accepts HTTP POST requests with a `Content-Type` set to `application/
 
 - `/null`: returns the message without modification
 - `/dns`: process the `Source` and `Target` elements of the message:
-  - if element has a `Hostname` and no `IP` fields: queries the DNS to get the IP corresponding to the hostname
-  - if element has a `IP` and no `Hostname` fields: queries the reverse DNS to get the hostname corresponding to the IP
+  - if element has a `Hostname` and no `IP` fields: queries the DNS to get the IP corresponding to the hostname and if IP found add it to the message
+  - if element has a `IP` and no `Hostname` fields: queries the reverse DNS to get the hostname corresponding to the IP and if hostname found add it to the message
 - `/glpi`: process the `Source` and `Target` elements of the message:
   - if element has a `IP` field, queries GLPI to search a computer having this IP and retrieves the `Location` associated to this computer in GLPI
   - if location exists, add the geolocation to the element and add an attachment specifying the link to the computer in GLPI web interface
+- `/ticket`: generate a GLPI ticket with `Source` and `Target` elements of the message as ticket attached items; does not modify the message
 
 # Contributions
 

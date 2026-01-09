@@ -80,6 +80,23 @@ class Util:
             return r[0]['2']
         return None
 
+    def search_item_m(self, item_type: str, field_value: dict) -> (int|None):
+        criteria = []
+        for field, value in field_value.items():
+            c = {
+                    "field": field,
+                    "searchtype": "contains",
+                    "value": "^" + value + "$",
+            }
+            if len(criteria) >= 1:
+                c["link"] = "AND"
+            criteria.append(c)
+        r = self._glpi.search(item_type, criteria=criteria)
+        logging.debug("search returned %s", str(r))
+        if len(r) >= 1:
+            return r[0]['2']
+        return None
+
     def create_item(self, item_type: str, item: dict) -> int:
         r = self._glpi.add(item_type, item)
         logging.debug("add returned %s", str(r))
@@ -98,8 +115,18 @@ class Util:
 def do_one_computer(u: Util, computer: dict):
     c = u.create_item_if_not_exist("Computer", computer["computer"])
     l = u.create_item_if_not_exist("Location", computer["location"])
-    u.update_item("Computer", c, {"locations_id": l})
-    #r = u.search_item("Computer", "IPAddress.name", computer["ipaddress"]["name"])
+    fv = {
+        "name": computer["computer"]["name"],
+        "Location.completename": computer["location"]["name"],
+    }
+    r = u.search_item_m("Computer", fv)
+    if r is None:
+        u.update_item("Computer", c, {"locations_id": l})
+    fv = {
+        "name": computer["computer"]["name"],
+        "IPAddress.name": computer["ipaddress"]["name"],
+    }
+    r = u.search_item_m("Computer", fv)
     if r is None:
         NETWORKPORT_TEMPLATE["items_id"] = c
         NETWORKPORT_TEMPLATE["NetworkName__ipaddresses"]["-1"] = computer["ipaddress"]["name"]
